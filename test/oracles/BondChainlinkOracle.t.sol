@@ -4,9 +4,9 @@ pragma solidity >=0.8.0;
 import {Test} from "lib/forge-std/src/Test.sol";
 import {console2} from "lib/forge-std/src/console2.sol";
 
-import {MockERC20} from "../mocks/MockERC20.sol";
-import {MockPriceFeed} from "../mocks/MockPriceFeed.sol";
-import {MockAggregator} from "../mocks/MockAggregator.sol";
+import {MockERC20} from "test/mocks/MockERC20.sol";
+import {MockPriceFeed} from "test/mocks/MockPriceFeed.sol";
+import {MockAggregator} from "test/mocks/MockAggregator.sol";
 
 import {BondChainlinkOracle, AggregatorV2V3Interface} from "src/oracles/BondChainlinkOracle.sol";
 

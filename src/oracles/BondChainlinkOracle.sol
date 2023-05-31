@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.15;
 
-import {AggregatorV2V3Interface} from "src/interfaces/AggregatorV2V3Interface.sol";
+import {AggregatorV2V3Interface} from "src/external/interfaces/AggregatorV2V3Interface.sol";
 import "src/bases/BondBaseOracle.sol";
 import {FullMath} from "src/lib/FullMath.sol";
 

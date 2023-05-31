@@ -4,15 +4,26 @@ pragma solidity >=0.8.0;
 import {Test} from "lib/forge-std/src/Test.sol";
 import {console2} from "lib/forge-std/src/console2.sol";
 
-import {MockERC20} from "../mocks/MockERC20.sol";
-import {MockPriceFeed} from "../mocks/MockPriceFeed.sol";
-import {MockAggregator} from "../mocks/MockAggregator.sol";
+import {MockERC20} from "test/mocks/MockERC20.sol";
+import {MockPriceFeed} from "test/mocks/MockPriceFeed.sol";
 
-import {BondChainlinkOracleArbitrum, AggregatorV2V3Interface} from "src/oracles/BondChainlinkOracleArbitrum.sol";
+import {BondChainlinkOracleL2, AggregatorV2V3Interface} from "src/oracles/BondChainlinkOracleL2.sol";
 
 import {FullMath} from "src/lib/FullMath.sol";
 
-contract BondChainlinkOracleArbitrumTest is Test {
+contract MockAggregator {
+    mapping(uint256 => address) public marketsToAuctioneers;
+
+    function getAuctioneer(uint256 id) public view returns (address) {
+        return marketsToAuctioneers[id];
+    }
+
+    function setMarketAuctioneer(uint256 id, address auctioneer) public {
+        marketsToAuctioneers[id] = auctioneer;
+    }
+}
+
+contract BondChainlinkOracleL2Test is Test {
     using FullMath for uint256;
 
     address public user;
@@ -28,7 +39,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
     MockPriceFeed public feedTwo;
     MockPriceFeed public feedThree;
     MockPriceFeed public sequencerFeed;
-    BondChainlinkOracleArbitrum public oracle;
+    BondChainlinkOracleL2 public oracle;
 
     function setUp() public {
         vm.warp(51 * 365 * 24 * 60 * 60); // Set timestamp at roughly Jan 1, 2021 (51 years since Unix epoch)
@@ -81,7 +92,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Deploy mock aggregator
         aggregator = new MockAggregator();
 
-        // Deploy mock Arbitrum sequencer feed
+        // Deploy mock L2 sequencer feed
         sequencerFeed = new MockPriceFeed();
         sequencerFeed.setLatestAnswer(int256(0)); // 0 means it is up
         sequencerFeed.setStartedAt(block.timestamp - 1 days); // just needs to further in the past the the grace period (1 hour)
@@ -89,7 +100,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Deploy oracle
         address[] memory auctioneers = new address[](1);
         auctioneers[0] = auctioneer;
-        oracle = new BondChainlinkOracleArbitrum(
+        oracle = new BondChainlinkOracleL2(
             address(aggregator),
             auctioneers,
             address(sequencerFeed)
@@ -190,7 +201,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
     //      [X] Reverts when either feed is invalid
     //  [X] Decimals
     //      [X] Decimals are returned correctly from params
-    //  [X] Arbitrum Sequencer Feed
+    //  [X] L2 Sequencer Feed
     //      [X] currentPrice reverts when sequencer feed is down
 
     function test_registerMarket() public {
@@ -259,7 +270,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -282,8 +293,8 @@ contract BondChainlinkOracleArbitrumTest is Test {
         uint256 price = oracle.currentPrice(0);
 
         // Calculate expected price and compare
-        uint256 expectedPrice = (uint256(feedOne.latestAnswer()) * 10 ** decimals_) /
-            10 ** numerDecimals_;
+        uint256 expectedPrice = (uint256(feedOne.latestAnswer()) * 10**decimals_) /
+            10**numerDecimals_;
 
         assertEq(price, expectedPrice);
 
@@ -332,7 +343,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -355,7 +366,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         uint256 price = oracle.currentPrice(0);
 
         // Calculate expected price and compare
-        uint256 expectedPrice = (10 ** decimals_ * 10 ** numerDecimals_) /
+        uint256 expectedPrice = (10**decimals_ * 10**numerDecimals_) /
             uint256(feedOne.latestAnswer());
 
         assertEq(price, expectedPrice);
@@ -412,11 +423,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -441,7 +452,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Calculate expected price and compare
         uint256 expectedPrice = uint256(feedOne.latestAnswer()).mulDiv(
             uint256(feedTwo.latestAnswer()),
-            10 ** (numerDecimals_ + denomDecimals_ - decimals_)
+            10**(numerDecimals_ + denomDecimals_ - decimals_)
         );
 
         assertEq(price, expectedPrice);
@@ -540,11 +551,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -568,7 +579,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
 
         // Calculate expected price and compare
         uint256 expectedPrice = uint256(feedOne.latestAnswer()).mulDiv(
-            10 ** (decimals_ + denomDecimals_ - numerDecimals_),
+            10**(decimals_ + denomDecimals_ - numerDecimals_),
             uint256(feedTwo.latestAnswer())
         );
 
@@ -716,7 +727,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -734,8 +745,8 @@ contract BondChainlinkOracleArbitrumTest is Test {
         uint256 price = oracle.currentPrice(tokenOne, tokenTwo);
 
         // Calculate expected price and compare
-        uint256 expectedPrice = (uint256(feedOne.latestAnswer()) * 10 ** decimals_) /
-            10 ** numerDecimals_;
+        uint256 expectedPrice = (uint256(feedOne.latestAnswer()) * 10**decimals_) /
+            10**numerDecimals_;
 
         assertEq(price, expectedPrice);
 
@@ -784,7 +795,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -802,7 +813,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         uint256 price = oracle.currentPrice(tokenTwo, tokenOne);
 
         // Calculate expected price and compare
-        uint256 expectedPrice = (10 ** decimals_ * 10 ** numerDecimals_) /
+        uint256 expectedPrice = (10**decimals_ * 10**numerDecimals_) /
             uint256(feedOne.latestAnswer());
 
         assertEq(price, expectedPrice);
@@ -859,11 +870,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -883,7 +894,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Calculate expected price and compare
         uint256 expectedPrice = uint256(feedOne.latestAnswer()).mulDiv(
             uint256(feedTwo.latestAnswer()),
-            10 ** (numerDecimals_ + denomDecimals_ - decimals_)
+            10**(numerDecimals_ + denomDecimals_ - decimals_)
         );
 
         assertEq(price, expectedPrice);
@@ -982,11 +993,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1005,7 +1016,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
 
         // Calculate expected price and compare
         uint256 expectedPrice = uint256(feedOne.latestAnswer()).mulDiv(
-            10 ** (decimals_ + denomDecimals_ - numerDecimals_),
+            10**(decimals_ + denomDecimals_ - numerDecimals_),
             uint256(feedTwo.latestAnswer())
         );
 
@@ -1115,7 +1126,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1159,7 +1170,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1210,11 +1221,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1265,11 +1276,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1367,7 +1378,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1406,7 +1417,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1452,11 +1463,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1502,11 +1513,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1659,7 +1670,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1745,7 +1756,7 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1837,11 +1848,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedTwo.setDecimals(denomDecimals_);
         feedTwo.setLatestAnswer(
-            (feedTwo.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedTwo.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
@@ -1942,11 +1953,11 @@ contract BondChainlinkOracleArbitrumTest is Test {
         // Setup oracle data for pair
         feedOne.setDecimals(numerDecimals_);
         feedOne.setLatestAnswer(
-            (feedOne.latestAnswer() * int256(10 ** (numerDecimals_))) / int256(1e18)
+            (feedOne.latestAnswer() * int256(10**(numerDecimals_))) / int256(1e18)
         );
         feedThree.setDecimals(denomDecimals_);
         feedThree.setLatestAnswer(
-            (feedThree.latestAnswer() * int256(10 ** (denomDecimals_))) / int256(1e18)
+            (feedThree.latestAnswer() * int256(10**(denomDecimals_))) / int256(1e18)
         );
         bytes memory oracleData = abi.encode(
             address(feedOne),
