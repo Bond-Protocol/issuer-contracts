@@ -6,22 +6,11 @@ import {console2} from "lib/forge-std/src/console2.sol";
 
 import {MockERC20} from "test/mocks/MockERC20.sol";
 import {MockUniV3Pair} from "test/mocks/MockUniV3Pair.sol";
+import {MockAggregator} from "test/mocks/MockAggregator.sol";
 
 import {BondUniV3Oracle, IUniswapV3Pool, OracleLibrary} from "src/oracles/BondUniV3Oracle.sol";
 
-import {FullMath} from "src/lib/FullMath.sol";
-
-contract MockAggregator {
-    mapping(uint256 => address) public marketsToAuctioneers;
-
-    function getAuctioneer(uint256 id) public view returns (address) {
-        return marketsToAuctioneers[id];
-    }
-
-    function setMarketAuctioneer(uint256 id, address auctioneer) public {
-        marketsToAuctioneers[id] = auctioneer;
-    }
-}
+import {FullMath} from "lib/bond-contracts/src/lib/FullMath.sol";
 
 contract BondUniV3OracleTest is Test {
     using FullMath for uint256;

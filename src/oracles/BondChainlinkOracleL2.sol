@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 
 import {AggregatorV2V3Interface} from "src/external/interfaces/AggregatorV2V3Interface.sol";
 import "src/bases/BondBaseOracle.sol";
-import {FullMath} from "src/lib/FullMath.sol";
+import {FullMath} from "lib/bond-contracts/src/lib/FullMath.sol";
 
 /// @title Bond Chainlink Oracle
 /// @notice Bond Chainlink Oracle Sample Contract

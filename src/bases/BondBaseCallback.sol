@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.15;
 
-import {ERC20} from "src/lib/ERC20.sol";
+import {ERC20} from "lib/bond-contracts/lib/solmate/src/tokens/ERC20.sol";
 import {ReentrancyGuard} from "src/lib/ReentrancyGuard.sol";
 import {Owned} from "src/lib/Owned.sol";
-import {TransferHelper} from "src/lib/TransferHelper.sol";
+import {TransferHelper} from "lib/bond-contracts/src/lib/TransferHelper.sol";
 
 import {IBondCallback} from "src/interfaces/IBondCallback.sol";
-import {IBondAggregator} from "src/interfaces/IBondAggregator.sol";
+import {IBondAggregator} from "lib/bond-contracts/src/interfaces/IBondAggregator.sol";
 
 /// @title Bond Callback
 /// @notice Bond Callback Base Contract

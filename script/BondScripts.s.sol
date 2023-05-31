@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 
 import {Script, console2} from "forge-std/Script.sol";
 
-import {ERC20} from "src/lib/ERC20.sol";
+import {ERC20} from "lib/bond-contracts/lib/solmate/src/tokens/ERC20.sol";
 import {IBondAggregator} from "lib/bond-contracts/src/interfaces/IBondAggregator.sol";
 import {BondChainlinkOracle} from "src/oracles/BondChainlinkOracle.sol";
 import {BondChainlinkOracleL2} from "src/oracles/BondChainlinkOracleL2.sol";
@@ -73,6 +73,7 @@ contract BondScripts is Script {
     }
 
     function deployUniV3Oracle() public {
+        aggregator = vm.envAddress("AGGREGATOR_ADDRESS");
         fixedTermOSDA = vm.envAddress("FIXED_TERM_OSDA_ADDRESS");
         fixedExpiryOSDA = vm.envAddress("FIXED_EXP_OSDA_ADDRESS");
         fixedTermOFDA = vm.envAddress("FIXED_TERM_OFDA_ADDRESS");
@@ -85,7 +86,7 @@ contract BondScripts is Script {
         auctioneers[3] = fixedExpiryOFDA;
 
         vm.broadcast();
-        uniV3Oracle = new BondUniV3Oracle(auctioneers);
+        uniV3Oracle = new BondUniV3Oracle(aggregator, auctioneers);
         console2.log("UniV3 Oracle: ", address(uniV3Oracle));
     }
 
@@ -170,7 +171,7 @@ contract BondScripts is Script {
         address payoutToken,
         address payoutTokenPool,
         uint32 observationWindowSeconds,
-        uint8 decimals,
+        uint8 decimals
     ) public {
         // Create pair from inputs
         BondUniV3Oracle.UniswapV3Params memory params = BondUniV3Oracle.UniswapV3Params(

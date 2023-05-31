@@ -10,7 +10,7 @@ import {MockAggregator} from "test/mocks/MockAggregator.sol";
 
 import {BondChainlinkOracle, AggregatorV2V3Interface} from "src/oracles/BondChainlinkOracle.sol";
 
-import {FullMath} from "src/lib/FullMath.sol";
+import {FullMath} from "lib/bond-contracts/src/lib/FullMath.sol";
 
 contract BondChainlinkOracleTest is Test {
     using FullMath for uint256;

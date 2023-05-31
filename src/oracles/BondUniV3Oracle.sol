@@ -2,7 +2,7 @@
 pragma solidity 0.8.15;
 
 import "src/bases/BondBaseOracle.sol";
-import {FullMath} from "src/lib/FullMath.sol";
+import {FullMath} from "lib/bond-contracts/src/lib/FullMath.sol";
 import {IUniswapV3Pool} from "src/external/interfaces/IUniswapV3Pool.sol";
 import {OracleLibrary} from "src/external/lib/UniswapV3/OracleLibrary.sol";
 

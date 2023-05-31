@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity >=0.8.0;
 
-import "src/lib/FullMath.sol";
+import "lib/bond-contracts/src/lib/FullMath.sol";
 import "./TickMath.sol";
 import "src/external/interfaces/IUniswapV3Pool.sol";
 

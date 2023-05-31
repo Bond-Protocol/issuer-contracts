@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity 0.8.15;
 
-import {ERC20} from "src/lib/ERC20.sol";
+import {ERC20} from "lib/bond-contracts/lib/solmate/src/tokens/ERC20.sol";
 import {IBondOracle} from "src/interfaces/IBondOracle.sol";
-import {IBondAggregator} from "src/interfaces/IBondAggregator.sol";
+import {IBondAggregator} from "lib/bond-contracts/src/interfaces/IBondAggregator.sol";
 import {Owned} from "src/lib/Owned.sol";
 
 /// @title Bond Oracle
