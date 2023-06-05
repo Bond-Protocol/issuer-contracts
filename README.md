@@ -48,10 +48,10 @@ git clone https://github.com/<YOUR_GITHUB_USERNAME>/issuer-contracts
 forge build
 forge test
 ```
-4. Add deploy / configure scripts specific to your new contracts (see BondScriots.sol and the shell/ directory).
-5. Create and edit a .env file based on the sample. Within the issuer-contracts directory, run:
+4. Add deploy / configure scripts specific to your new contracts (see BondScripts.sol and the shell/ directory).
+5. Create a .env file based on the sample. Within the issuer-contracts directory, run:
 ```bash
 cp .env.sample .env
 ```
-Then, edit the .env file to include the required data at the top of the file, plus any other external contracts you need based on the scripts you will be running.
-6. Run your shell scripts for desired actions.
+6. Edit the .env file to include the required data at the top of the file, plus any other external contracts you need based on the scripts you will be running.
+7. Run your shell scripts for desired actions.
