@@ -26,9 +26,10 @@ cd issuer-contracts
 ```bash
 cp .env.sample .env
 ```
-Then, edit the .env file to include the required data at the top of the file, plus any other external contracts you need based on the scripts you will be running.
 
-3. Run provided shell scripts for desired actions. Some require inputs. Review the shell script files and the scripts/BondScripts.sol file for instructions.
+3. Edit the .env file to include the required data at the top of the file, plus any other external contracts you need based on the scripts you will be running.
+
+4. Run provided shell scripts for desired actions. Some require inputs. Review the shell script files and the scripts/BondScripts.sol file for instructions.
 
 ## Building your own contracts from provided base contracts
 Bond Protocol has developed some base contracts that issuers can use to build their own callbacks and oracles from. These provide the required interfaces and vetted designs to securely implement the required functionality.
